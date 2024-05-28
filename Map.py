@@ -185,7 +185,7 @@ class Map:
         return "up"
     else:
       if px > zx:
-        return "left"
-      else:
         return "right"
+      else:
+        return "left"
       
