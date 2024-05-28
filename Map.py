@@ -118,9 +118,9 @@ class Map:
     for j in alt_wall:
       for jj in j["body"]:
         alt_c.append(jj)
-    for j in alt_wall:
+    for j in new_wall:
       for jj in j["body"]:
-        alt_c.append(jj)
+        new_c.append(jj)
 
     c = alt_c + new_c
     for i in c:
@@ -144,14 +144,15 @@ class Map:
     dh = [0, 0, +1, -1]
     print(self.map)
     while to_visit:
-      pos_x, pos_y, last_point = to_visit.pop()
+      pos_x, pos_y, last_point = to_visit.pop(0)
       if self.map[pos_x][pos_y] == 1: # stop search when food found
         found = (pos_x, pos_y)
+        visited_from[pos_x, pos_y] = last_point
         break
       for i in range(4):
-        if 0 < pos_x + dw[i] < self.size and 0 < pos_y + dh[i] < self.size:
-          visited_from[(pos_x,pos_y)] = last_point # save last step to current point
-          print(self.map[pos_x+dw[i]][pos_y+dh[i]])
+        if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size:
+          visited_from[(pos_x, pos_y)] = last_point # save last step to current point
+          #print(self.map[pos_x+dw[i]][pos_y+dh[i]])
           if visited_from.get((pos_x+dw[i], pos_y+dh[i]), []) != [] or self.map[pos_x+dw[i]][pos_y+dh[i]] == -1:
             continue
           to_visit.append((pos_x+dw[i], pos_y+ dh[i], (pos_x, pos_y)))
@@ -173,7 +174,7 @@ class Map:
   def next_step(self, position:dict):
     self.find_path(position)
     print(self.path)
-    ziel = self.path.pop()
+    ziel = self.path.pop(0)
     return self.direction(position, ziel)
 
   # Valid moves are "up", "down", "left", or "right"
