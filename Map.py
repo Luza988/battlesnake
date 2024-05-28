@@ -12,6 +12,13 @@ class Map:
     self.size = size
     self.last_Request = request
 
+  def update(self, game_state):
+    
+    self.map = np.rot90(np.zeros((self.size, self.size)).astype(int))
+    self.set_food(game_state["board"]["food"])
+    self.set_snakes(game_state["board"]["snakes"])
+    self.last_Request = game_state
+  
   def set_wall(self, x, y):
     self.map[x][y] = -1
 
@@ -71,6 +78,7 @@ class Map:
   ]
   """
   def set_snakes(self, snakes):
+    you = True
     for snake in snakes:
       """
       {
@@ -93,45 +101,14 @@ class Map:
         }
       }
       """
+      head = True
       for body in snake["body"]:
         self.set_wall(body["x"], body["y"])
-
-  def update_map(self, current_request):
-    self.update_food(self.last_Request["board"]["food"], current_request["board"]["food"])
-    self.update_wall(self.last_Request["board"]["snakes"], current_request["board"]["snakes"])
-    self.last_Request = current_request
-
-  def update_food(self, alt_food, new_food):
-    c = alt_food + new_food
-    for i in c:
-      if i not in alt_food or i not in new_food:
-          if i in alt_food:
-            print("Apple eaten at", i["x"], i["y"])
-            if self.map[i["x"]][i["y"]] == 1:
-              self.map[i["x"]][i["y"]] = 0
-          else:
-            self.map[i["x"]][i["y"]] = 1
-
-  def update_wall(self, alt_wall, new_wall):
-    alt_c = []
-    new_c = []
-    for j in alt_wall:
-      for jj in j["body"]:
-        alt_c.append(jj)
-    for j in new_wall:
-      for jj in j["body"]:
-        new_c.append(jj)
-
-    c = alt_c + new_c
-    for i in c:
-      if i not in alt_c or i not in new_c:
-          if i in alt_c:
-            print("Snake moved away from", i["x"], i["y"])
-            if self.map[i["x"]][i["y"]] == -1:
-              self.map[i["x"]][i["y"]] = 0
-          else:
-            print("Snake moved to", i["x"], i["y"])
-            self.map[i["x"]][i["y"]] = -1
+        if not you and head:
+          self.no_zone(body["x"], body["y"])
+          head = False
+      you = False
+        
   
   def find_path(self, position:dict):
     to_visit = [(position["x"], position["y"], (position["x"], position["y"]))]
@@ -145,7 +122,7 @@ class Map:
     print(self.map)
     while to_visit:
       pos_x, pos_y, last_point = to_visit.pop(0)
-      if self.map[pos_x][pos_y] == 1: # stop search when food found
+      if self.map[pos_x][pos_y] == 1 and self.has_next_move(pos_x,pos_y, last_point): # stop search when food found
         found = (pos_x, pos_y)
         visited_from[pos_x, pos_y] = last_point
         break
@@ -189,7 +166,22 @@ class Map:
         return "up"
     else:
       if px > zx:
-        return "right"
-      else:
         return "left"
-      
+      else:
+        return "right"
+
+
+  def no_zone(self, pos_x, pos_y):
+    dw = [-1, +1, 0, 0]
+    dh = [0, 0, +1, -1]
+    for i in range(4):
+      if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size:
+        self.map[pos_x + dw[i]][pos_y + dh[i]] = -1
+
+  def has_next_move(self, pos_x, pos_y, last_pos):
+    dw = [-1, +1, 0, 0]
+    dh = [0, 0, +1, -1]
+    for i in range(4):
+      if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size:
+        if self.map[pos_x + dw[i]][pos_y + dh[i]] != -1 and (pos_x + dw[i], pos_y + dh[i]) != last_pos:
+          return True

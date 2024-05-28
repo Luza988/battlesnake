@@ -49,25 +49,23 @@ def end(game_state: typing.Dict):
 # See https://docs.battlesnake.com/api/example-move for available data
 def move(game_state: typing.Dict) -> typing.Dict:
     start_time = time.time()
-    print("turn:", game_state["turn"])
+    #print("turn:", game_state["turn"])
     if game_state["turn"] == 0:
         arena.setup(game_state["board"]["width"], game_state)
-        arena.set_food(game_state["board"]["food"])
-        arena.set_snakes(game_state["board"]["snakes"])
-        print("initialized :", time.time() - start_time)
+        arena.update(game_state)
+        #print("initialized :", time.time() - start_time)
     else:
-        arena.update_map(game_state)
-        last_Request = game_state
+        arena.update(game_state)
     next_move = arena.next_step(game_state["you"]["head"])
         
-    
+    #print("move :", time.time() - start_time)
     print(f"MOVE {game_state['turn']}: {next_move}")
     return {"move": next_move}
 
 
 # Start server when `python main.py` is run
 if __name__ == "__main__":
-    """
+    
     from server import run_server
 
     run_server({
@@ -257,4 +255,4 @@ if __name__ == "__main__":
             }
         }
     })
-
+    """
