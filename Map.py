@@ -7,7 +7,7 @@ class Map:
     self.path = []
 
   def setup(self, size):
-    self.map = np.zeros((size, size))
+    self.map = np.zeros((size, size)).astype(int)
     self.size = size
 
   def set_wall(self, x, y):
@@ -131,7 +131,7 @@ class Map:
             self.map[i["x"]][i["y"]] = -1
   
   def find_path(self, position:dict):
-    to_visit = [((position["x"], position["y"]), (position["x"], position["y"]))]
+    to_visit = [(position["x"], position["y"], (position["x"], position["y"]))]
     visited_from = {}
 
     start = (position["x"], position["y"])
@@ -139,18 +139,19 @@ class Map:
     
     dw = [-1, +1, 0, 0]
     dh = [0, 0, +1, -1]
-
+    print(self.map)
     while to_visit:
-      current_pos, last_point = to_visit.pop()
-      pos_x, pos_y = current_pos
+      pos_x, pos_y, last_point = to_visit.pop()
+      if self.map[pos_x][pos_y] == 1: # stop search when food found
+        found = (pos_x, pos_y)
+        break
       for i in range(4):
-        visited_from[(pos_x,pos_y)] = last_point # save last step to current point 
-        if self.map[pos_x][pos_y] == 1: # stop search when food found
-          found = (pos_x,pos_y)
-          break
-        if not (0 < pos_x + dw[i] < self.size) or not(0 < pos_y + dh[i] < self.size) or visited_from.get((pos_x+dw[i], pos_y+dh[i]),[]) == [] or self.map[pos_x+dw[i]][pos_y+dh[i]] == -1:
-          continue
-        to_visit.append((pos_x+dw[i], pos_y+ dh[i], (pos_x, pos_y)))
+        if 0 < pos_x + dw[i] < self.size and 0 < pos_y + dh[i] < self.size:
+          visited_from[(pos_x,pos_y)] = last_point # save last step to current point
+          print(self.map[pos_x+dw[i]][pos_y+dh[i]])
+          if visited_from.get((pos_x+dw[i], pos_y+dh[i]), []) != [] or self.map[pos_x+dw[i]][pos_y+dh[i]] == -1:
+            continue
+          to_visit.append((pos_x+dw[i], pos_y+ dh[i], (pos_x, pos_y)))
 
     self.path = []
     if found:
@@ -170,14 +171,12 @@ class Map:
     self.find_path(position)
     print(self.path)
     ziel = self.path.pop()
-    position_tupel = (position["x"], position["y"])
-    print(ziel, position_tupel)
-    return self.direction(position_tupel, ziel)
+    return self.direction(position, ziel)
 
   # Valid moves are "up", "down", "left", or "right"
-  def direction(px, py, ziel):
-    #px = position["x"]
-    #py = position["y"]
+  def direction(self, position: dict, ziel):
+    px = position["x"]
+    py = position["y"]
     zx, zy = ziel
     if px == zx:
       if py > zy:
