@@ -5,10 +5,12 @@ class Map:
     self.size = -1
     self.map = None
     self.path = []
+    self.last_Request = None
 
-  def setup(self, size):
+  def setup(self, size, request):
     self.map = np.zeros((size, size)).astype(int)
     self.size = size
+    self.last_Request = request
 
   def set_wall(self, x, y):
     self.map[x][y] = -1
@@ -94,9 +96,10 @@ class Map:
       for body in snake["body"]:
         self.set_wall(body["x"], body["y"])
 
-  def update_map(self, last_request, current_request):
-    self.update_food(last_request["food"], current_request["food"])
-    self.update_wall(last_request["snake"], current_request["snake"])
+  def update_map(self, current_request):
+    self.update_food(self.last_Request["board"]["food"], current_request["board"]["food"])
+    self.update_wall(self.last_Request["board"]["snakes"], current_request["board"]["snakes"])
+    self.last_Request = current_request
 
   def update_food(self, alt_food, new_food):
     c = alt_food + new_food
