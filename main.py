@@ -67,7 +67,7 @@ def move(game_state: typing.Dict) -> typing.Dict:
 
 # Start server when `python main.py` is run
 if __name__ == "__main__":
-    """
+    
     from server import run_server
 
     run_server({
@@ -257,4 +257,4 @@ if __name__ == "__main__":
             }
         }
     })
-
+    """

@@ -27,111 +27,29 @@ class Map:
     for food in foodList:
       self.map[food["x"]][food["y"]] = 1 
 
-  """
-  [
-    {
-      "id": "snake-508e96ac-94ad-11ea-bb37",
-      "name": "My Snake",
-      "health": 54,
-      "body": [
-        {"x": 0, "y": 0},
-        {"x": 1, "y": 0},
-        {"x": 2, "y": 0}
-      ],
-      "latency": "111",
-      "head": {"x": 0, "y": 0},
-      "length": 3,
-      "shout": "why are we shouting??",
-      "customizations":{
-        "color":"#FF0000",
-        "head":"pixel",
-        "tail":"pixel"
-      }
-    },
-    {
-      "id": "snake-b67f4906-94ae-11ea-bb37",
-      "name": "Another Snake",
-      "health": 16,
-      "body": [
-        {"x": 5, "y": 4},
-        {"x": 5, "y": 3},
-        {"x": 6, "y": 3},
-        {"x": 6, "y": 2}
-      ],
-      "latency": "222",
-      "head": {"x": 5, "y": 4},
-      "length": 4,
-      "shout": "I'm not really sure...",
-      "customizations":{
-        "color":"#26CF04",
-        "head":"silly",
-        "tail":"curled"
-      }
-    }
-  ]
-  """
+  def update_map(self, current_request):
+    self.setup(current_request["board"]["height"], current_request)
+    self.set_food(current_request["board"]["food"])
+    self.set_snakes(current_request["board"]["snakes"])
+  
   def set_snakes(self, snakes):
     for snake in snakes:
-      """
-      {
-        "id": "snake-508e96ac-94ad-11ea-bb37",
-        "name": "My Snake",
-        "health": 54,
-        "body": [
-          {"x": 0, "y": 0},
-          {"x": 1, "y": 0},
-          {"x": 2, "y": 0}
-        ],
-        "latency": "111",
-        "head": {"x": 0, "y": 0},
-        "length": 3,
-        "shout": "why are we shouting??",
-        "customizations":{
-          "color":"#FF0000",
-          "head":"pixel",
-          "tail":"pixel"
-        }
-      }
-      """
-      for body in snake["body"]:
+      bodys = snake["body"]
+      for i in range(len(bodys)-1):
+        body = bodys.pop(0)
         self.set_wall(body["x"], body["y"])
-
-  def update_map(self, current_request):
-    self.update_food(self.last_Request["board"]["food"], current_request["board"]["food"])
-    self.update_wall(self.last_Request["board"]["snakes"], current_request["board"]["snakes"])
-    self.last_Request = current_request
-
-  def update_food(self, alt_food, new_food):
-    c = alt_food + new_food
-    for i in c:
-      if i not in alt_food or i not in new_food:
-          if i in alt_food:
-            print("Apple eaten at", i["x"], i["y"])
-            if self.map[i["x"]][i["y"]] == 1:
-              self.map[i["x"]][i["y"]] = 0
+        if i == 0 and self.last_Request["you"]["head"] != body:  
+          if snake["length"] + 2 < self.last_Request["you"]["length"]:
+            self.map[body["x"]][body["y"]] = 1    
           else:
-            self.map[i["x"]][i["y"]] = 1
+            self.no_zone(body["x"], body["y"])
 
-  def update_wall(self, alt_wall, new_wall):
-    alt_c = []
-    new_c = []
-    for j in alt_wall:
-      for jj in j["body"]:
-        alt_c.append(jj)
-    for j in new_wall:
-      for jj in j["body"]:
-        new_c.append(jj)
-
-    c = alt_c + new_c
-    for i in c:
-      if i not in alt_c or i not in new_c:
-          if i in alt_c:
-            print("Snake moved away from", i["x"], i["y"])
-            if self.map[i["x"]][i["y"]] == -1:
-              self.map[i["x"]][i["y"]] = 0
-          else:
-            print("Snake moved to", i["x"], i["y"])
-            self.map[i["x"]][i["y"]] = -1
+  def no_zone(self, pos_x, pos_y):
+    dw = [-1, +1, 0, 0]
+    dh = [0, 0, +1, -1]
+    for i in range(4):
+      if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size:
+        self.map[pos_x + dw[i]][pos_y+dh[i]] = -1
   
   def find_path(self, position:dict):
     to_visit = [(position["x"], position["y"], (position["x"], position["y"]))]
@@ -165,7 +83,7 @@ class Map:
     else:
       for i in range(4):
         print(dw[i], dh[i])
-        if 0 < pos_x + dw[i] < self.size or 0 < pos_y + dh[i] < self.size or not self.map[pos_x+dw[i]][pos_y+dh[i]] == -1:
+        if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size and not self.map[pos_x+dw[i]][pos_y+dh[i]] == -1:
           self.path = [(pos_x + dw[i], pos_y+dh[i])]
           break
 
@@ -187,9 +105,33 @@ class Map:
         return "down"
       else:
         return "up"
-    else:
+    elif py == zy:
       if px > zx:
-        return "right"
-      else:
         return "left"
+      else:
+        return "right"
+    else:
+      return self.valid_move(px-zx,py-zy)
+
+  def valid_move(self,dx, dy):
+    snake_pos = self.last_Request["you"]["head"]
+    pos_x = snake_pos["x"]
+    pos_y = snake_pos["y"]
+    if dx > 0:
+      if dy > 0:
+        l = [1,4]
+      else:
+        l = [0,4]
+    else:
+      if dy > 0:
+        l = [1,3]
+      else:
+        l = [0,3]
       
+    dw = [-1, +1, 0, 0]
+    dh = [0, 0, +1, -1]
+    direction = ["left", "right", "up", "down"]
+    for i in l:
+      print(pos_x + dw[i],pos_y + dh[i]) 
+      if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size and self.map[pos_x+dw[i]][pos_y+dh[i]] != -1:
+        return direction[i]
