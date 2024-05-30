@@ -13,8 +13,7 @@ class Map:
     self.last_Request = request
 
   def update(self, game_state):
-    
-    self.map = np.rot90(np.zeros((self.size, self.size)).astype(int))
+    self.map = np.zeros((self.size, self.size)).astype(int)
     self.set_food(game_state["board"]["food"])
     self.set_snakes(game_state["board"]["snakes"])
     self.last_Request = game_state
@@ -78,7 +77,7 @@ class Map:
   ]
   """
   def set_snakes(self, snakes):
-    you = True
+    other = False
     for snake in snakes:
       """
       {
@@ -101,13 +100,16 @@ class Map:
         }
       }
       """
-      head = True
-      for body in snake["body"]:
+      bodys = snake["body"]
+      for i in range(len(bodys)-1):
+        body = bodys.pop(0)
         self.set_wall(body["x"], body["y"])
-        if not you and head:
+        if i == 0 and other:  
           self.no_zone(body["x"], body["y"])
-          head = False
-      you = False
+        other = True
+        
+          
+          
         
   
   def find_path(self, position:dict):
@@ -119,7 +121,7 @@ class Map:
     
     dw = [-1, +1, 0, 0]
     dh = [0, 0, +1, -1]
-    print(self.map)
+    print(self.map
     while to_visit:
       pos_x, pos_y, last_point = to_visit.pop(0)
       if self.map[pos_x][pos_y] == 1 and self.has_next_move(pos_x,pos_y, last_point): # stop search when food found
@@ -140,9 +142,10 @@ class Map:
         self.path.append(found)
         found = visited_from[found]
     else:
+      self.path = [(self.size // 2, self.size // 2)] # Path zu schweif
       for i in range(4):
-        print(dw[i], dh[i])
-        if 0 < pos_x + dw[i] < self.size or 0 < pos_y + dh[i] < self.size or not self.map[pos_x+dw[i]][pos_y+dh[i]] == -1:
+        #print(dw[i], dh[i])
+        if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size and self.map[pos_x+dw[i]][pos_y+dh[i]] != -1:
           self.path = [(pos_x + dw[i], pos_y+dh[i])]
           break
 
@@ -156,6 +159,7 @@ class Map:
 
   # Valid moves are "up", "down", "left", or "right"
   def direction(self, position: dict, ziel):
+    print(position, ziel)
     px = position["x"]
     py = position["y"]
     zx, zy = ziel
@@ -164,11 +168,13 @@ class Map:
         return "down"
       else:
         return "up"
-    else:
+    elif py == zy:
       if px > zx:
         return "left"
       else:
         return "right"
+    else:
+      return self.valid_move(position)
 
 
   def no_zone(self, pos_x, pos_y):
@@ -185,3 +191,14 @@ class Map:
       if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size:
         if self.map[pos_x + dw[i]][pos_y + dh[i]] != -1 and (pos_x + dw[i], pos_y + dh[i]) != last_pos:
           return True
+
+  def valid_move(self, position: dict):
+    pos_x = position["x"]
+    pos_y = position["y"]
+    dw = [-1, +1, 0, 0]
+    dh = [0, 0, +1, -1]
+    directions = {0:"left", 1: "right", 2:"up", 3: "down"}
+    for i in range(4):
+      if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size and self.map[pos_x][pos_y] != -1:
+        print("valid:", 1)
+        return directions[i]
