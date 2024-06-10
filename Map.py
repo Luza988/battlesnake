@@ -40,16 +40,16 @@ class Map:
         self.set_wall(body["x"], body["y"])
         if i == 0 and self.last_Request["you"]["head"] != body:  
           if snake["length"] + 2 < self.last_Request["you"]["length"]:
-            self.map[body["x"]][body["y"]] = 1    
+            self.map[body["x"]][body["y"]] = 1#self.zone(body["x"],body["y"], 1)    
           else:
-            self.no_zone(body["x"], body["y"])
+            self.zone(body["x"], body["y"], -1)
 
-  def no_zone(self, pos_x, pos_y):
+  def zone(self, pos_x, pos_y, value):
     dw = [-1, +1, 0, 0]
     dh = [0, 0, +1, -1]
     for i in range(4):
-      if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size:
-        self.map[pos_x + dw[i]][pos_y+dh[i]] = -1
+      if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size and self.map[pos_x + dw[i]][pos_y+dh[i]] != -1:
+        self.map[pos_x + dw[i]][pos_y+dh[i]] = value
   
   def find_path(self, position:dict):
     to_visit = [(position["x"], position["y"], (position["x"], position["y"]))]
@@ -60,7 +60,7 @@ class Map:
     
     dw = [-1, +1, 0, 0]
     dh = [0, 0, +1, -1]
-    print(self.map)
+    #print(self.map)
     while to_visit:
       pos_x, pos_y, last_point = to_visit.pop(0)
       if self.map[pos_x][pos_y] == 1: # stop search when food found
@@ -82,8 +82,8 @@ class Map:
         found = visited_from[found]
     else:
       for i in range(4):
-        print(dw[i], dh[i])
-        if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size and not self.map[pos_x+dw[i]][pos_y+dh[i]] == -1:
+        #print(dw[i], dh[i])
+        if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size and self.map[pos_x+dw[i]][pos_y+dh[i]] != -1:
           self.path = [(pos_x + dw[i], pos_y+dh[i])]
           break
 
@@ -91,7 +91,7 @@ class Map:
 
   def next_step(self, position:dict):
     self.find_path(position)
-    print(self.path)
+    #print(self.path)
     ziel = self.path.pop(0)
     return self.direction(position, ziel)
 
@@ -111,27 +111,16 @@ class Map:
       else:
         return "right"
     else:
-      return self.valid_move(px-zx,py-zy)
+      return self.valid_move()
 
-  def valid_move(self,dx, dy):
+  def valid_move(self):
     snake_pos = self.last_Request["you"]["head"]
     pos_x = snake_pos["x"]
     pos_y = snake_pos["y"]
-    if dx > 0:
-      if dy > 0:
-        l = [1,4]
-      else:
-        l = [0,4]
-    else:
-      if dy > 0:
-        l = [1,3]
-      else:
-        l = [0,3]
-      
     dw = [-1, +1, 0, 0]
     dh = [0, 0, +1, -1]
     direction = ["left", "right", "up", "down"]
-    for i in l:
+    for i in range(4):
       print(pos_x + dw[i],pos_y + dh[i]) 
       if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size and self.map[pos_x+dw[i]][pos_y+dh[i]] != -1:
         return direction[i]
