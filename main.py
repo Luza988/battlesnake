@@ -61,7 +61,7 @@ def move(game_state: typing.Dict) -> typing.Dict:
     next_move = arena.next_step(game_state["you"]["head"])
         
     
-    print(f"MOVE {game_state['turn']}: {next_move}")
+    print(f"MOVE {game_state['turn']}: {next_move}", "in", time.time() - start_time)
     return {"move": next_move}
 
 

@@ -1,4 +1,20 @@
 import numpy as np
+import heapq
+import sys
+
+class PriorityQueue:
+  def __init__(self):
+      self.elements = []
+
+  def empty(self):
+      return len(self.elements) == 0
+
+  def put(self, item, priority):
+      heapq.heappush(self.elements, (priority, item))
+
+  def get(self):
+      return heapq.heappop(self.elements)[1]
+
 
 class Map:
   def __init__(self):
@@ -6,11 +22,13 @@ class Map:
     self.map = None
     self.path = []
     self.last_Request = None
+    self.goals = set()
 
   def setup(self, size, request):
     self.map = np.zeros((size, size)).astype(int)
     self.size = size
     self.last_Request = request
+    self.goals.clear()
 
   def set_wall(self, x, y):
     self.map[x][y] = -1
@@ -26,6 +44,7 @@ class Map:
   def set_food(self, foodList):
     for food in foodList:
       self.map[food["x"]][food["y"]] = 1 
+      self.goals.add((food["x"],food["y"]))
 
   def update_map(self, current_request):
     self.setup(current_request["board"]["height"], current_request)
@@ -50,6 +69,10 @@ class Map:
     for i in range(4):
       if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size and self.map[pos_x + dw[i]][pos_y+dh[i]] != -1:
         self.map[pos_x + dw[i]][pos_y+dh[i]] = value
+        if value == 1:
+          self.goals.add((pos_x + dw[i],pos_y+dh[i]))
+        elif (pos_x + dw[i],pos_y+dh[i]) in self.goals:
+          self.goals.discard((pos_x + dw[i],pos_y+dh[i]))
   
   def find_path(self, position:dict):
     to_visit = [(position["x"], position["y"], (position["x"], position["y"]))]
@@ -90,9 +113,14 @@ class Map:
     self.path = self.path.copy()[::-1]
 
   def next_step(self, position:dict):
-    self.find_path(position)
+    #self.find_path(position)
     #print(self.path)
-    ziel = self.path.pop(0)
+    print(self.map)
+    print("goal", self.goals)
+    path = self.astar((position["x"], position["y"]))
+    print(path)
+    ziel = path.pop()
+    #ziel = self.path.pop()
     return self.direction(position, ziel)
 
   # Valid moves are "up", "down", "left", or "right"
@@ -124,3 +152,66 @@ class Map:
       print(pos_x + dw[i],pos_y + dh[i]) 
       if 0 <= pos_x + dw[i] < self.size and 0 <= pos_y + dh[i] < self.size and self.map[pos_x+dw[i]][pos_y+dh[i]] != -1:
         return direction[i]
+  
+  def heuristic(self, position):
+    min = sys.maxsize
+    for goal in self.goals:
+      dis = distance(position, goal)
+      if dis < min:
+        min = dis
+        
+    return min
+    
+  def astar(self, start):
+    unvisited_nodes = PriorityQueue()
+    unvisited_nodes.put(start, 0)
+    
+    visited_nodes = {}
+    visited_nodes[start] = None
+    
+    cost_so_far = {}
+    cost_so_far[start] = 0
+    
+    while not unvisited_nodes.empty():
+      current = unvisited_nodes.get()
+      #print("current", current)
+      #print("unvisited", unvisited_nodes.elements)
+      if self.map[current[0]][current[1]] == 1:
+        print("found goal", (current[0], current[1]))
+        break
+
+      dw = [-1, +1, 0, 0]
+      dh = [0, 0, +1, -1]
+      for i in range(4):
+        if 0 <= current[0] + dw[i] < self.size and 0 <= current[1] + dh[i] < self.size and self.map[current[0]+dw[i]][current[1]+dh[i]] != -1:
+          #print("next", (current[0] + dw[i], current[1] + dh[i]))
+          #print("cost_so_far", cost_so_far.keys())
+          new_cost = cost_so_far[current] + 1
+          if ((current[0] + dw[i], current[1] + dh[i]) not in cost_so_far.keys()) or (new_cost < cost_so_far[(current[0] + dw[i], current[1] + dh[i])]):
+            cost_so_far[(current[0] + dw[i], current[1] + dh[i])] = new_cost
+            priorität = new_cost + self.heuristic((current[0] + dw[i], current[1] + dh[i]))
+            unvisited_nodes.put((current[0] + dw[i], current[1] + dh[i]), priorität)
+            #print("put", ((current[0] + dw[i], current[1] + dh[i]), priorität), "in", unvisited_nodes.elements)
+            visited_nodes[(current[0] + dw[i], current[1] + dh[i])] = current
+        
+
+    path = self.make_path(visited_nodes, start, current)
+    return path
+
+  def make_path(self, came_from, start, goal):
+    path=[goal]
+    if start==goal:
+        return [self.valid_move()]
+    nex = came_from[goal]
+    while nex != start:
+        path.append(nex)
+        nex = came_from[nex]
+    return path
+
+# Unabhängige Funktionen
+
+def distance(position1, position2):
+  px, py = position1
+  zx, zy = position2
+  return abs(px-zx) + abs(py-zx)
+
